@@ -1,4 +1,4 @@
-import { Conversation } from "@/lib/mock-data";
+import { Conversation } from "@/lib/api";
 import { Phone, Clock, MessageSquare } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; class: string }> = {
@@ -34,8 +34,14 @@ export function ConversationList({ conversations, selectedId, onSelect }: Props)
         </h2>
       </div>
       <div className="flex-1 overflow-auto">
+        {conversations.length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+            No conversations yet. Messages from WhatsApp will appear here.
+          </div>
+        )}
         {conversations.map(conv => {
           const status = statusConfig[conv.status] || statusConfig.active;
+          const isWaiting = conv.status === "waiting_agent";
           return (
             <button
               key={conv.id}
@@ -46,8 +52,8 @@ export function ConversationList({ conversations, selectedId, onSelect }: Props)
             >
               <div className="flex items-start justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  {conv.unread && <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />}
-                  <span className="font-medium text-sm text-foreground">{conv.customer_name}</span>
+                  {isWaiting && <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0 animate-pulse-soft" />}
+                  <span className="font-medium text-sm text-foreground">{conv.customer_name || conv.phone_number}</span>
                 </div>
                 <span className={status.class}>{status.label}</span>
               </div>
@@ -55,10 +61,12 @@ export function ConversationList({ conversations, selectedId, onSelect }: Props)
                 <Phone className="w-3 h-3" />
                 {conv.phone_number}
               </div>
-              <p className="text-sm text-muted-foreground truncate ml-4">{conv.last_message}</p>
+              {conv.last_message && (
+                <p className="text-sm text-muted-foreground truncate ml-4">{conv.last_message}</p>
+              )}
               <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1.5 ml-4">
                 <Clock className="w-3 h-3" />
-                {timeAgo(conv.created_at)}
+                {timeAgo(conv.updated_at)}
               </div>
             </button>
           );

@@ -1,6 +1,6 @@
 import { MessageSquare, Users, BarChart3, Settings, Bell, Inbox } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { mockConversations } from "@/lib/mock-data";
+import { useConversations } from "@/hooks/use-data";
 
 const navItems = [
   { title: "Inbox", url: "/", icon: Inbox },
@@ -10,11 +10,11 @@ const navItems = [
 ];
 
 export function AppSidebar() {
-  const waitingCount = mockConversations.filter(c => c.status === "waiting_agent").length;
+  const { data: conversations = [] } = useConversations();
+  const waitingCount = conversations.filter(c => c.status === "waiting_agent").length;
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-sidebar border-r border-sidebar-border min-h-screen">
-      {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
         <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
           <MessageSquare className="w-4 h-4 text-sidebar-primary-foreground" />
@@ -22,7 +22,6 @@ export function AppSidebar() {
         <span className="text-lg font-semibold text-sidebar-accent-foreground">Velora AI</span>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map(item => (
           <NavLink
@@ -48,7 +47,6 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      {/* Agent info */}
       <div className="px-4 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary text-sm font-medium">
