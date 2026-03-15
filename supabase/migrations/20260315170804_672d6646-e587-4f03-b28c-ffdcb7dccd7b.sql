@@ -1,0 +1,1 @@
+CREATE POLICY "Anon can update settings" ON public.settings FOR UPDATE TO anon USING (true);
