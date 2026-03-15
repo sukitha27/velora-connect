@@ -1,6 +1,9 @@
-import { useState } from "react";
-import { Message, Conversation } from "@/lib/mock-data";
-import { Send, Bot, User, Headphones, Phone } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Message, Conversation, subscribeToMessages } from "@/lib/api";
+import { useSendMessage } from "@/hooks/use-data";
+import { useQueryClient } from "@tanstack/react-query";
+import { Send, Bot, User, Headphones, Phone, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -19,21 +22,34 @@ interface Props {
 
 export function ChatView({ conversation, messages }: Props) {
   const [reply, setReply] = useState("");
+  const sendMessage = useSendMessage();
+  const queryClient = useQueryClient();
+
+  // Subscribe to realtime messages
+  useEffect(() => {
+    const channel = subscribeToMessages(conversation.id, () => {
+      queryClient.invalidateQueries({ queryKey: ["messages", conversation.id] });
+    });
+    return () => { channel.unsubscribe(); };
+  }, [conversation.id, queryClient]);
 
   const handleSend = () => {
-    if (!reply.trim()) return;
-    // In production, this would trigger an API call to n8n webhook
-    console.log("Sending reply via n8n webhook:", { conversation_id: conversation.id, message: reply });
-    setReply("");
+    if (!reply.trim() || sendMessage.isPending) return;
+    sendMessage.mutate(
+      { conversationId: conversation.id, phoneNumber: conversation.phone_number, message: reply },
+      {
+        onSuccess: () => { setReply(""); toast.success("Message sent"); },
+        onError: (err) => { toast.error("Failed to send: " + (err as Error).message); },
+      }
+    );
   };
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat header */}
       <div className="px-6 py-4 border-b border-border bg-card">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-foreground">{conversation.customer_name}</h3>
+            <h3 className="font-semibold text-foreground">{conversation.customer_name || conversation.phone_number}</h3>
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Phone className="w-3.5 h-3.5" />
               {conversation.phone_number}
@@ -45,8 +61,10 @@ export function ChatView({ conversation, messages }: Props) {
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-auto px-6 py-4 space-y-4">
+        {messages.length === 0 && (
+          <div className="text-center text-sm text-muted-foreground py-8">No messages yet</div>
+        )}
         {messages.map(msg => {
           const config = senderConfig[msg.sender_type];
           const Icon = config.icon;
@@ -57,7 +75,7 @@ export function ChatView({ conversation, messages }: Props) {
                 <Icon className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground font-medium">{config.label}</span>
                 <span className="text-xs text-muted-foreground">·</span>
-                <span className="text-xs text-muted-foreground">{formatTime(msg.timestamp)}</span>
+                <span className="text-xs text-muted-foreground">{formatTime(msg.created_at)}</span>
               </div>
               <div className={`${config.bubbleClass} rounded-2xl px-4 py-2.5 max-w-[75%] text-sm leading-relaxed ${
                 isUser ? "rounded-tl-sm" : "rounded-tr-sm"
@@ -69,7 +87,6 @@ export function ChatView({ conversation, messages }: Props) {
         })}
       </div>
 
-      {/* Reply input */}
       <div className="px-6 py-4 border-t border-border bg-card">
         <div className="flex items-center gap-3">
           <input
@@ -82,10 +99,10 @@ export function ChatView({ conversation, messages }: Props) {
           />
           <button
             onClick={handleSend}
-            disabled={!reply.trim()}
+            disabled={!reply.trim() || sendMessage.isPending}
             className="p-3 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40"
           >
-            <Send className="w-4 h-4" />
+            {sendMessage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
       </div>
