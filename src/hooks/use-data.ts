@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchConversations, fetchMessages, fetchLeads, updateLeadStatus, sendAgentMessage, getAnalytics } from "@/lib/api";
+import { fetchConversations, fetchMessages, fetchLeads, updateLeadStatus, sendAgentMessage, getAnalytics, fetchSettings, saveSettings } from "@/lib/api";
 
 export function useConversations() {
   return useQuery({
@@ -48,5 +48,20 @@ export function useAnalytics() {
   return useQuery({
     queryKey: ["analytics"],
     queryFn: getAnalytics,
+  });
+}
+
+export function useSettings() {
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: fetchSettings,
+  });
+}
+
+export function useSaveSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (settings: Record<string, string>) => saveSettings(settings),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),
   });
 }

@@ -92,6 +92,26 @@ export function subscribeToConversations(callback: (payload: unknown) => void) {
     .subscribe();
 }
 
+export async function fetchSettings() {
+  const { data, error } = await supabase
+    .from("settings")
+    .select("*");
+  if (error) throw error;
+  const map: Record<string, string> = {};
+  (data || []).forEach((row: any) => { map[row.key] = row.value; });
+  return map;
+}
+
+export async function saveSettings(settings: Record<string, string>) {
+  for (const [key, value] of Object.entries(settings)) {
+    const { error } = await supabase
+      .from("settings")
+      .update({ value, updated_at: new Date().toISOString() })
+      .eq("key", key);
+    if (error) throw error;
+  }
+}
+
 export function subscribeToMessages(conversationId: string, callback: (payload: unknown) => void) {
   return supabase
     .channel(`messages-${conversationId}`)
