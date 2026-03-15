@@ -122,12 +122,3 @@ export function subscribeToMessages(conversationId: string, callback: (payload: 
     )
     .subscribe();
 }
-  return supabase
-    .channel(`messages-${conversationId}`)
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-      callback
-    )
-    .subscribe();
-}
