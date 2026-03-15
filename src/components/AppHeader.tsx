@@ -1,8 +1,9 @@
 import { Menu, Bell, Search } from "lucide-react";
-import { mockConversations } from "@/lib/mock-data";
+import { useConversations } from "@/hooks/use-data";
 
 export function AppHeader({ title }: { title: string }) {
-  const waitingCount = mockConversations.filter(c => c.status === "waiting_agent").length;
+  const { data: conversations = [] } = useConversations();
+  const waitingCount = conversations.filter(c => c.status === "waiting_agent").length;
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
