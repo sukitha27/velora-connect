@@ -14,7 +14,112 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          assigned_agent_id: string | null
+          created_at: string
+          customer_name: string | null
+          id: string
+          last_message: string | null
+          phone_number: string
+          status: Database["public"]["Enums"]["conversation_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_agent_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          last_message?: string | null
+          phone_number: string
+          status?: Database["public"]["Enums"]["conversation_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_agent_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          last_message?: string | null
+          phone_number?: string
+          status?: Database["public"]["Enums"]["conversation_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          customer_name: string | null
+          id: string
+          phone_number: string
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          phone_number: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          phone_number?: string
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message: string
+          phone_number: string
+          sender_type: Database["public"]["Enums"]["sender_type"]
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message: string
+          phone_number: string
+          sender_type?: Database["public"]["Enums"]["sender_type"]
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          phone_number?: string
+          sender_type?: Database["public"]["Enums"]["sender_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +128,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      conversation_status: "active" | "waiting_agent" | "resolved" | "bot"
+      lead_status: "new" | "waiting_agent" | "contacted" | "converted"
+      sender_type: "user" | "bot" | "agent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +257,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      conversation_status: ["active", "waiting_agent", "resolved", "bot"],
+      lead_status: ["new", "waiting_agent", "contacted", "converted"],
+      sender_type: ["user", "bot", "agent"],
+    },
   },
 } as const
