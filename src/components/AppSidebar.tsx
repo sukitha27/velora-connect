@@ -1,6 +1,7 @@
-import { MessageSquare, Users, BarChart3, Settings, Bell, Inbox } from "lucide-react";
+import { MessageSquare, Users, BarChart3, Settings, Bell, Inbox, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useConversations } from "@/hooks/use-data";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { title: "Inbox", url: "/", icon: Inbox },
