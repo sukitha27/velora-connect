@@ -1,6 +1,7 @@
-import { MessageSquare, Users, BarChart3, Settings, Bell, Inbox } from "lucide-react";
+import { MessageSquare, Users, BarChart3, Settings, Bell, Inbox, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useConversations } from "@/hooks/use-data";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
   { title: "Inbox", url: "/", icon: Inbox },
@@ -11,6 +12,7 @@ const navItems = [
 
 export function AppSidebar() {
   const { data: conversations = [] } = useConversations();
+  const { user, signOut } = useAuth();
   const waitingCount = conversations.filter(c => c.status === "waiting_agent").length;
 
   return (
@@ -50,16 +52,17 @@ export function AppSidebar() {
       <div className="px-4 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary text-sm font-medium">
-            A
+            {(user?.email?.[0] ?? "A").toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-accent-foreground truncate">Agent Admin</p>
+            <p className="text-sm font-medium text-sidebar-accent-foreground truncate">
+              {user?.user_metadata?.display_name || user?.email || "Agent"}
+            </p>
             <p className="text-xs text-sidebar-foreground truncate">Online</p>
           </div>
-          <div className="relative">
-            <Bell className="w-4 h-4 text-sidebar-foreground" />
-            {waitingCount > 0 && <span className="notification-dot" />}
-          </div>
+          <button onClick={signOut} className="p-1.5 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground" title="Sign out">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>
