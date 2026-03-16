@@ -12,6 +12,7 @@ const navItems = [
 
 export function AppSidebar() {
   const { data: conversations = [] } = useConversations();
+  const { user, signOut } = useAuth();
   const waitingCount = conversations.filter(c => c.status === "waiting_agent").length;
 
   return (
