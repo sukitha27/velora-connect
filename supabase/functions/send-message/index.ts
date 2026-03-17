@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const META_API_URL = "https://graph.facebook.com/v21.0";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,6 +52,42 @@ serve(async (req) => {
       );
     }
 
+    // Send message via Meta WhatsApp Cloud API
+    const whatsappToken = Deno.env.get("WHATSAPP_API_TOKEN");
+    const phoneId = Deno.env.get("WHATSAPP_PHONE_ID");
+
+    if (whatsappToken && phoneId) {
+      const metaResponse = await fetch(
+        `${META_API_URL}/${phoneId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${whatsappToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: phone_number,
+            type: "text",
+            text: { body: message },
+          }),
+        }
+      );
+
+      const metaData = await metaResponse.json();
+      if (!metaResponse.ok) {
+        console.error("Meta API error:", JSON.stringify(metaData));
+        return new Response(
+          JSON.stringify({ error: "Failed to send WhatsApp message", details: metaData }),
+          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("Meta API success:", JSON.stringify(metaData));
+    } else {
+      console.warn("WhatsApp API credentials not configured, skipping Meta API call");
+    }
+
     // Save message to database
     const { error: msgError } = await supabase.from("messages").insert({
       conversation_id,
@@ -81,7 +119,6 @@ serve(async (req) => {
         });
       } catch (webhookError) {
         console.error("n8n webhook error:", webhookError);
-        // Don't fail the request if webhook fails
       }
     }
 
