@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    // Validate auth
+    // Validate auth - require authenticated user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -37,6 +37,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const userId = claimsData.claims.sub;
+    console.log(`Authenticated agent ${userId} sending message`);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -115,6 +118,7 @@ serve(async (req) => {
             phone_number,
             message,
             conversation_id,
+            agent_id: userId,
           }),
         });
       } catch (webhookError) {

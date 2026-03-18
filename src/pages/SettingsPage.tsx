@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Globe, Webhook, Bell, Save, Loader2 } from "lucide-react";
+import { Webhook, Bell, Save, Loader2, Shield } from "lucide-react";
 import { useSettings, useSaveSettings } from "@/hooks/use-data";
 import { toast } from "sonner";
 
@@ -10,9 +10,6 @@ const SettingsPage = () => {
 
   const [settings, setSettings] = useState({
     n8n_webhook_url: "",
-    whatsapp_api_token: "",
-    whatsapp_phone_id: "",
-    whatsapp_business_id: "",
     notify_on_waiting: "true",
     notify_sound: "true",
     auto_assign: "false",
@@ -52,6 +49,22 @@ const SettingsPage = () => {
   return (
     <DashboardLayout title="Settings">
       <div className="p-6 max-w-3xl space-y-6">
+        {/* WhatsApp API Info */}
+        <div className="bg-card rounded-xl border border-border shadow-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">WhatsApp Cloud API</h3>
+              <p className="text-sm text-muted-foreground">API credentials are securely stored as encrypted secrets</p>
+            </div>
+          </div>
+          <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+            <p>Your WhatsApp API Token, Phone Number ID, and Verify Token are managed as secure environment secrets and cannot be viewed or edited from this page for security reasons.</p>
+          </div>
+        </div>
+
         {/* n8n Settings */}
         <div className="bg-card rounded-xl border border-border shadow-card p-6">
           <div className="flex items-center gap-3 mb-4">
@@ -60,7 +73,7 @@ const SettingsPage = () => {
             </div>
             <div>
               <h3 className="font-semibold text-foreground">n8n Webhook Configuration</h3>
-              <p className="text-sm text-muted-foreground">Configure the n8n workflow webhook for sending messages</p>
+              <p className="text-sm text-muted-foreground">Configure the n8n workflow webhook for automation</p>
             </div>
           </div>
           <div className="space-y-4">
@@ -73,53 +86,6 @@ const SettingsPage = () => {
                 className="w-full bg-muted rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
                 placeholder="https://your-n8n.com/webhook/..."
               />
-            </div>
-          </div>
-        </div>
-
-        {/* WhatsApp API Settings */}
-        <div className="bg-card rounded-xl border border-border shadow-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-success" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground">WhatsApp Cloud API</h3>
-              <p className="text-sm text-muted-foreground">Meta WhatsApp Business API credentials</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-1.5">API Token</label>
-              <input
-                type="password"
-                value={settings.whatsapp_api_token}
-                onChange={e => update("whatsapp_api_token", e.target.value)}
-                className="w-full bg-muted rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="Enter your API token"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">Phone Number ID</label>
-                <input
-                  type="text"
-                  value={settings.whatsapp_phone_id}
-                  onChange={e => update("whatsapp_phone_id", e.target.value)}
-                  className="w-full bg-muted rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                  placeholder="Phone Number ID"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">Business Account ID</label>
-                <input
-                  type="text"
-                  value={settings.whatsapp_business_id}
-                  onChange={e => update("whatsapp_business_id", e.target.value)}
-                  className="w-full bg-muted rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                  placeholder="Business Account ID"
-                />
-              </div>
             </div>
           </div>
         </div>
