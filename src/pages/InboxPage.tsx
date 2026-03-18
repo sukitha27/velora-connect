@@ -5,7 +5,7 @@ import { ChatView } from "@/components/ChatView";
 import { useConversations, useMessages } from "@/hooks/use-data";
 import { subscribeToConversations } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { MessageSquare, Loader2, ArrowLeft } from "lucide-react";
 
 const InboxPage = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -14,7 +14,6 @@ const InboxPage = () => {
   const selectedConv = conversations.find(c => c.id === selectedId);
   const queryClient = useQueryClient();
 
-  // Realtime subscription for conversation updates
   useEffect(() => {
     const channel = subscribeToConversations(() => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
@@ -22,10 +21,13 @@ const InboxPage = () => {
     return () => { channel.unsubscribe(); };
   }, [queryClient]);
 
+  const handleBack = () => setSelectedId(null);
+
   return (
     <DashboardLayout title="Inbox">
       <div className="flex h-[calc(100vh-4rem)]">
-        <div className="w-full md:w-96 border-r border-border flex-shrink-0">
+        {/* Conversation list: hidden on mobile when a conversation is selected */}
+        <div className={`w-full md:w-96 border-r border-border flex-shrink-0 ${selectedId ? "hidden md:flex md:flex-col" : "flex flex-col"}`}>
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -39,9 +41,17 @@ const InboxPage = () => {
           )}
         </div>
 
-        <div className="hidden md:flex flex-1">
+        {/* Chat view: shown on mobile when conversation is selected */}
+        <div className={`flex-1 ${selectedId ? "flex flex-col" : "hidden md:flex"}`}>
           {selectedConv ? (
-            <div className="flex-1">
+            <div className="flex-1 flex flex-col">
+              {/* Mobile back button */}
+              <div className="md:hidden flex items-center gap-2 px-4 py-2 border-b border-border bg-card">
+                <button onClick={handleBack} className="p-2 rounded-lg hover:bg-muted">
+                  <ArrowLeft className="w-5 h-5 text-foreground" />
+                </button>
+                <span className="font-medium text-sm text-foreground">{selectedConv.customer_name || selectedConv.phone_number}</span>
+              </div>
               <ChatView conversation={selectedConv} messages={messages} />
             </div>
           ) : (

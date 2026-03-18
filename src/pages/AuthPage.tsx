@@ -46,7 +46,7 @@ const AuthPage = () => {
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
             <MessageSquare className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">WhatsApp Agent Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">Velora AI</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {isLogin ? "Sign in to manage conversations" : "Create your agent account"}
           </p>

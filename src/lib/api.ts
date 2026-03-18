@@ -49,6 +49,17 @@ export async function sendAgentMessage(conversationId: string, phoneNumber: stri
   return data;
 }
 
+export async function claimConversation(conversationId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("conversations")
+    .update({ assigned_agent_id: user.id, status: "active" as const })
+    .eq("id", conversationId);
+  if (error) throw error;
+}
+
 export async function getAnalytics() {
   const { count: totalConversations } = await supabase
     .from("conversations")

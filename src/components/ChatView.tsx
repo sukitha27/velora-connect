@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Message, Conversation, subscribeToMessages } from "@/lib/api";
-import { useSendMessage } from "@/hooks/use-data";
+import { useSendMessage, useClaimConversation } from "@/hooks/use-data";
 import { useQueryClient } from "@tanstack/react-query";
-import { Send, Bot, User, Headphones, Phone, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Send, Bot, User, Headphones, Phone, Loader2, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 function formatTime(dateStr: string) {
@@ -23,9 +24,13 @@ interface Props {
 export function ChatView({ conversation, messages }: Props) {
   const [reply, setReply] = useState("");
   const sendMessage = useSendMessage();
+  const claimConversation = useClaimConversation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  // Subscribe to realtime messages
+  const isClaimed = !!conversation.assigned_agent_id;
+  const isClaimedByMe = conversation.assigned_agent_id === user?.id;
+
   useEffect(() => {
     const channel = subscribeToMessages(conversation.id, () => {
       queryClient.invalidateQueries({ queryKey: ["messages", conversation.id] });
@@ -44,6 +49,13 @@ export function ChatView({ conversation, messages }: Props) {
     );
   };
 
+  const handleClaim = () => {
+    claimConversation.mutate(conversation.id, {
+      onSuccess: () => toast.success("Conversation claimed"),
+      onError: (err) => toast.error("Failed to claim: " + (err as Error).message),
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="px-6 py-4 border-b border-border bg-card">
@@ -55,9 +67,20 @@ export function ChatView({ conversation, messages }: Props) {
               {conversation.phone_number}
             </div>
           </div>
-          <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
-            Claim Conversation
-          </button>
+          {isClaimed ? (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted text-sm text-muted-foreground">
+              <UserCheck className="w-4 h-4" />
+              {isClaimedByMe ? "Claimed by you" : "Claimed"}
+            </div>
+          ) : (
+            <button
+              onClick={handleClaim}
+              disabled={claimConversation.isPending}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {claimConversation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Claim Conversation"}
+            </button>
+          )}
         </div>
       </div>
 

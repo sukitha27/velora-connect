@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchConversations, fetchMessages, fetchLeads, updateLeadStatus, sendAgentMessage, getAnalytics, fetchSettings, saveSettings } from "@/lib/api";
+import { fetchConversations, fetchMessages, fetchLeads, updateLeadStatus, sendAgentMessage, getAnalytics, fetchSettings, saveSettings, claimConversation } from "@/lib/api";
 
 export function useConversations() {
   return useQuery({
@@ -39,6 +39,16 @@ export function useSendMessage() {
       sendAgentMessage(conversationId, phoneNumber, message),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["messages", vars.conversationId] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+}
+
+export function useClaimConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (conversationId: string) => claimConversation(conversationId),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
