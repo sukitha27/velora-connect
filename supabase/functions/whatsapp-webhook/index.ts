@@ -109,7 +109,7 @@ async function processIncomingMessage(
   // Find or create conversation
   let { data: conversation } = await supabase
     .from("conversations")
-    .select("id")
+    .select("*")
     .eq("phone_number", phone_number)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -123,8 +123,9 @@ async function processIncomingMessage(
         customer_name: customer_name || phone_number,
         last_message: message,
         status: "active",
+        chat_mode: "bot",
       })
-      .select("id")
+      .select("*")
       .single();
 
     if (convError) throw convError;
@@ -175,4 +176,105 @@ async function processIncomingMessage(
       });
     }
   }
+
+  // If chat_mode is "bot", auto-reply with AI
+  if (conversation.chat_mode === "bot" && sender_type === "user") {
+    try {
+      await triggerAiAutoReply(supabase, conversation);
+    } catch (aiError) {
+      console.error("AI auto-reply error:", aiError);
+    }
+  }
+}
+
+const META_API_URL = "https://graph.facebook.com/v21.0";
+
+async function triggerAiAutoReply(
+  supabase: ReturnType<typeof createClient>,
+  conversation: any
+) {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    console.warn("LOVABLE_API_KEY not set, skipping AI auto-reply");
+    return;
+  }
+
+  // Fetch recent messages for context
+  const { data: messages } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("conversation_id", conversation.id)
+    .order("created_at", { ascending: true })
+    .limit(30);
+
+  const chatMessages = (messages || []).map((m: any) => ({
+    role: m.sender_type === "user" ? "user" : "assistant",
+    content: m.message,
+  }));
+
+  const systemPrompt = `You are Velora AI, a friendly WhatsApp customer support assistant.
+Keep responses concise (under 150 words) and natural for WhatsApp.
+Customer name: ${conversation.customer_name || "there"}.
+Be polite, empathetic, and solution-oriented.
+If you can't help, offer to connect them with a human agent.`;
+
+  const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [{ role: "system", content: systemPrompt }, ...chatMessages],
+    }),
+  });
+
+  if (!aiResponse.ok) {
+    console.error("AI gateway error:", aiResponse.status);
+    return;
+  }
+
+  const aiData = await aiResponse.json();
+  const aiReply = aiData.choices?.[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+
+  // Send via WhatsApp
+  const whatsappToken = Deno.env.get("WHATSAPP_API_TOKEN");
+  const phoneId = Deno.env.get("WHATSAPP_PHONE_ID");
+
+  if (whatsappToken && phoneId) {
+    const metaResponse = await fetch(`${META_API_URL}/${phoneId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${whatsappToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: conversation.phone_number,
+        type: "text",
+        text: { body: aiReply },
+      }),
+    });
+
+    if (!metaResponse.ok) {
+      const err = await metaResponse.json();
+      console.error("Meta API error for auto-reply:", JSON.stringify(err));
+    }
+  }
+
+  // Save bot message to DB
+  await supabase.from("messages").insert({
+    conversation_id: conversation.id,
+    phone_number: conversation.phone_number,
+    message: aiReply,
+    sender_type: "bot",
+  });
+
+  await supabase
+    .from("conversations")
+    .update({ last_message: aiReply })
+    .eq("id", conversation.id);
+
+  console.log("AI auto-reply sent for conversation", conversation.id);
 }
