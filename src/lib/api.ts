@@ -60,6 +60,30 @@ export async function claimConversation(conversationId: string) {
   if (error) throw error;
 }
 
+export async function updateChatMode(conversationId: string, chatMode: "manual" | "bot") {
+  const { error } = await supabase
+    .from("conversations")
+    .update({ chat_mode: chatMode } as any)
+    .eq("id", conversationId);
+  if (error) throw error;
+}
+
+export async function getAiSuggestion(conversationId: string) {
+  const { data, error } = await supabase.functions.invoke("ai-chat", {
+    body: { conversation_id: conversationId, mode: "suggest" },
+  });
+  if (error) throw error;
+  return data.reply as string;
+}
+
+export async function sendAiAutoReply(conversationId: string) {
+  const { data, error } = await supabase.functions.invoke("ai-chat", {
+    body: { conversation_id: conversationId, mode: "auto" },
+  });
+  if (error) throw error;
+  return data.reply as string;
+}
+
 export async function getAnalytics() {
   const { count: totalConversations } = await supabase
     .from("conversations")
