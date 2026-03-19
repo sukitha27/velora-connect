@@ -17,6 +17,7 @@ export type Database = {
       conversations: {
         Row: {
           assigned_agent_id: string | null
+          chat_mode: Database["public"]["Enums"]["chat_mode"]
           created_at: string
           customer_name: string | null
           id: string
@@ -27,6 +28,7 @@ export type Database = {
         }
         Insert: {
           assigned_agent_id?: string | null
+          chat_mode?: Database["public"]["Enums"]["chat_mode"]
           created_at?: string
           customer_name?: string | null
           id?: string
@@ -37,6 +39,7 @@ export type Database = {
         }
         Update: {
           assigned_agent_id?: string | null
+          chat_mode?: Database["public"]["Enums"]["chat_mode"]
           created_at?: string
           customer_name?: string | null
           id?: string
@@ -173,6 +176,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      chat_mode: "manual" | "bot"
       conversation_status: "active" | "waiting_agent" | "resolved" | "bot"
       lead_status: "new" | "waiting_agent" | "contacted" | "converted"
       sender_type: "user" | "bot" | "agent"
@@ -303,6 +307,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      chat_mode: ["manual", "bot"],
       conversation_status: ["active", "waiting_agent", "resolved", "bot"],
       lead_status: ["new", "waiting_agent", "contacted", "converted"],
       sender_type: ["user", "bot", "agent"],
