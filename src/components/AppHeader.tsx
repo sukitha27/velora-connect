@@ -1,9 +1,17 @@
 import { Menu, Bell, Search } from "lucide-react";
 import { useConversations } from "@/hooks/use-data";
 
-export function AppHeader({ title }: { title: string }) {
+interface Props {
+  title: string;
+  onSearch?: (query: string) => void;
+  searchQuery?: string;
+}
+
+export function AppHeader({ title, onSearch, searchQuery = "" }: Props) {
   const { data: conversations = [] } = useConversations();
-  const waitingCount = conversations.filter(c => c.status === "waiting_agent").length;
+  const waitingCount = conversations.filter(
+    (c) => c.status === "waiting_agent"
+  ).length;
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
@@ -14,17 +22,32 @@ export function AppHeader({ title }: { title: string }) {
         <h1 className="text-lg font-semibold text-foreground">{title}</h1>
       </div>
       <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center bg-muted rounded-lg px-3 py-2 gap-2">
-          <Search className="w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search conversations..."
-            className="bg-transparent text-sm outline-none w-48 placeholder:text-muted-foreground"
-          />
-        </div>
+        {onSearch && (
+          <div className="hidden sm:flex items-center bg-muted rounded-lg px-3 py-2 gap-2">
+            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearch(e.target.value)}
+              placeholder="Search conversations..."
+              className="bg-transparent text-sm outline-none w-48 placeholder:text-muted-foreground"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => onSearch("")}
+                className="text-muted-foreground hover:text-foreground text-xs leading-none"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
         <button className="relative p-2 rounded-lg hover:bg-muted">
           <Bell className="w-5 h-5 text-muted-foreground" />
-          {waitingCount > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />}
+          {waitingCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
+          )}
         </button>
       </div>
     </header>
