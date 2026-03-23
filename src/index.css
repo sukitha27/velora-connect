@@ -148,10 +148,10 @@
     @apply inline-flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
   }
   .badge-waiting {
-    @apply inline-flex items-center gap-1 bg-warning/12 text-warning text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
+    @apply inline-flex items-center gap-1 bg-warning/10 text-warning text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
   }
   .badge-contacted {
-    @apply inline-flex items-center gap-1 bg-info/12 text-info text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
+    @apply inline-flex items-center gap-1 bg-info/10 text-info text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
   }
   .badge-converted {
     @apply inline-flex items-center gap-1 bg-success/12 text-success text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
