@@ -1,4 +1,4 @@
-import { Menu, Bell, Search } from "lucide-react";
+import { Bell, Search, X } from "lucide-react";
 import { useConversations } from "@/hooks/use-data";
 
 interface Props {
@@ -14,39 +14,41 @@ export function AppHeader({ title, onSearch, searchQuery = "" }: Props) {
   ).length;
 
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
-      <div className="flex items-center gap-4">
-        <button className="md:hidden p-2 rounded-lg hover:bg-muted">
-          <Menu className="w-5 h-5 text-muted-foreground" />
-        </button>
-        <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-      </div>
-      <div className="flex items-center gap-3">
+    <header className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-5 gap-4 sticky top-0 z-10">
+      <h1 className="text-[15px] font-semibold text-foreground tracking-tight flex-shrink-0">
+        {title}
+      </h1>
+
+      <div className="flex items-center gap-2 ml-auto">
         {onSearch && (
-          <div className="hidden sm:flex items-center bg-muted rounded-lg px-3 py-2 gap-2">
-            <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <div className={`hidden sm:flex items-center rounded-lg px-3 py-1.5 gap-2 transition-all duration-200 ${
+            searchQuery
+              ? "bg-primary/8 ring-1 ring-primary/20"
+              : "bg-muted hover:bg-muted/80"
+          }`}>
+            <Search className={`w-3.5 h-3.5 flex-shrink-0 ${searchQuery ? "text-primary" : "text-muted-foreground"}`} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => onSearch(e.target.value)}
-              placeholder="Search conversations..."
-              className="bg-transparent text-sm outline-none w-48 placeholder:text-muted-foreground"
+              placeholder="Search…"
+              className="bg-transparent text-[13px] outline-none w-36 sm:w-48 placeholder:text-muted-foreground text-foreground"
             />
             {searchQuery && (
               <button
                 onClick={() => onSearch("")}
-                className="text-muted-foreground hover:text-foreground text-xs leading-none"
-                aria-label="Clear search"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                ✕
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         )}
-        <button className="relative p-2 rounded-lg hover:bg-muted">
-          <Bell className="w-5 h-5 text-muted-foreground" />
+
+        <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
+          <Bell className="text-muted-foreground" style={{ width: 17, height: 17 }} />
           {waitingCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full ring-2 ring-card" />
           )}
         </button>
       </div>
