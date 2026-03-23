@@ -41,16 +41,26 @@ export async function updateLeadStatus(id: string, status: Lead["status"]) {
   if (error) throw error;
 }
 
-export async function sendAgentMessage(conversationId: string, phoneNumber: string, message: string) {
+export async function sendAgentMessage(
+  conversationId: string,
+  phoneNumber: string,
+  message: string
+) {
   const { data, error } = await supabase.functions.invoke("send-message", {
-    body: { conversation_id: conversationId, phone_number: phoneNumber, message },
+    body: {
+      conversation_id: conversationId,
+      phone_number: phoneNumber,
+      message,
+    },
   });
   if (error) throw error;
   return data;
 }
 
 export async function claimConversation(conversationId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
   const { error } = await supabase
@@ -60,10 +70,13 @@ export async function claimConversation(conversationId: string) {
   if (error) throw error;
 }
 
-export async function updateChatMode(conversationId: string, chatMode: "manual" | "bot") {
+export async function updateChatMode(
+  conversationId: string,
+  chatMode: "manual" | "bot"
+) {
   const { error } = await supabase
     .from("conversations")
-    .update({ chat_mode: chatMode } as any)
+    .update({ chat_mode: chatMode })
     .eq("id", conversationId);
   if (error) throw error;
 }
@@ -73,6 +86,7 @@ export async function getAiSuggestion(conversationId: string) {
     body: { conversation_id: conversationId, mode: "suggest" },
   });
   if (error) throw error;
+  if (!data?.reply) throw new Error("No suggestion returned");
   return data.reply as string;
 }
 
@@ -102,10 +116,13 @@ export async function getAnalytics() {
     .from("leads")
     .select("status");
 
-  const statusCounts = (leadsByStatus || []).reduce((acc, l) => {
-    acc[l.status] = (acc[l.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const statusCounts = (leadsByStatus || []).reduce(
+    (acc, l) => {
+      acc[l.status] = (acc[l.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   return {
     totalConversations: totalConversations || 0,
@@ -120,39 +137,58 @@ export async function getAnalytics() {
   };
 }
 
-export function subscribeToConversations(callback: (payload: unknown) => void) {
+export function subscribeToConversations(
+  callback: (payload: unknown) => void
+) {
   return supabase
     .channel("conversations-changes")
-    .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, callback)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "conversations" },
+      callback
+    )
     .subscribe();
 }
 
 export async function fetchSettings() {
-  const { data, error } = await supabase
-    .from("settings")
-    .select("*");
+  const { data, error } = await supabase.from("settings").select("*");
   if (error) throw error;
   const map: Record<string, string> = {};
-  (data || []).forEach((row: any) => { map[row.key] = row.value; });
+  (data || []).forEach((row: any) => {
+    map[row.key] = row.value;
+  });
   return map;
 }
 
 export async function saveSettings(settings: Record<string, string>) {
-  for (const [key, value] of Object.entries(settings)) {
-    const { error } = await supabase
-      .from("settings")
-      .update({ value, updated_at: new Date().toISOString() })
-      .eq("key", key);
-    if (error) throw error;
-  }
+  const rows = Object.entries(settings).map(([key, value]) => ({
+    key,
+    value,
+    updated_at: new Date().toISOString(),
+  }));
+
+  // Use upsert so new keys are created if they don't exist yet
+  const { error } = await supabase
+    .from("settings")
+    .upsert(rows, { onConflict: "key" });
+
+  if (error) throw error;
 }
 
-export function subscribeToMessages(conversationId: string, callback: (payload: unknown) => void) {
+export function subscribeToMessages(
+  conversationId: string,
+  callback: (payload: unknown) => void
+) {
   return supabase
     .channel(`messages-${conversationId}`)
     .on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `conversation_id=eq.${conversationId}`,
+      },
       callback
     )
     .subscribe();
