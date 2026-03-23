@@ -23,7 +23,7 @@ export function AppHeader({ title, onSearch, searchQuery = "" }: Props) {
         {onSearch && (
           <div className={`hidden sm:flex items-center rounded-lg px-3 py-1.5 gap-2 transition-all duration-200 ${
             searchQuery
-              ? "bg-primary/8 ring-1 ring-primary/20"
+              ? "bg-primary/10 ring-1 ring-primary/20"
               : "bg-muted hover:bg-muted/80"
           }`}>
             <Search className={`w-3.5 h-3.5 flex-shrink-0 ${searchQuery ? "text-primary" : "text-muted-foreground"}`} />
