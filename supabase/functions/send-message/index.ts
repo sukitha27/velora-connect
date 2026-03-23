@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const META_API_URL = "https://graph.facebook.com/v21.0";
@@ -23,22 +24,26 @@ serve(async (req) => {
       });
     }
 
+    // Use getUser() — the correct Supabase SDK method
     const supabaseAuth = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAuth.auth.getUser();
+
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = user.id;
     console.log(`Authenticated agent ${userId} sending message`);
 
     const supabase = createClient(
@@ -50,8 +55,13 @@ serve(async (req) => {
 
     if (!conversation_id || !phone_number || !message) {
       return new Response(
-        JSON.stringify({ error: "conversation_id, phone_number, and message are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "conversation_id, phone_number, and message are required",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -60,35 +70,39 @@ serve(async (req) => {
     const phoneId = Deno.env.get("WHATSAPP_PHONE_ID");
 
     if (whatsappToken && phoneId) {
-      const metaResponse = await fetch(
-        `${META_API_URL}/${phoneId}/messages`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${whatsappToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: phone_number,
-            type: "text",
-            text: { body: message },
-          }),
-        }
-      );
+      const metaResponse = await fetch(`${META_API_URL}/${phoneId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${whatsappToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: phone_number,
+          type: "text",
+          text: { body: message },
+        }),
+      });
 
       const metaData = await metaResponse.json();
       if (!metaResponse.ok) {
         console.error("Meta API error:", JSON.stringify(metaData));
         return new Response(
-          JSON.stringify({ error: "Failed to send WhatsApp message", details: metaData }),
-          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({
+            error: "Failed to send WhatsApp message",
+            details: metaData,
+          }),
+          {
+            status: 502,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
         );
       }
-
       console.log("Meta API success:", JSON.stringify(metaData));
     } else {
-      console.warn("WhatsApp API credentials not configured, skipping Meta API call");
+      console.warn(
+        "WhatsApp API credentials not configured, skipping Meta API call"
+      );
     }
 
     // Save message to database
@@ -100,7 +114,7 @@ serve(async (req) => {
     });
     if (msgError) throw msgError;
 
-    // Update conversation
+    // Update conversation last_message and status
     await supabase
       .from("conversations")
       .update({ last_message: message, status: "active" })
@@ -126,15 +140,20 @@ serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Send message error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });
