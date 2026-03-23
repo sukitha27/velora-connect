@@ -154,7 +154,7 @@
     @apply inline-flex items-center gap-1 bg-info/10 text-info text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
   }
   .badge-converted {
-    @apply inline-flex items-center gap-1 bg-success/12 text-success text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
+    @apply inline-flex items-center gap-1 bg-success/10 text-success text-[11px] font-semibold px-2 py-0.5 rounded-full tracking-wide;
   }
 
   /* Notification dot on sidebar icon */
