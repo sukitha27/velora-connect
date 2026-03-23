@@ -1,20 +1,16 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useLeads, useUpdateLeadStatus } from "@/hooks/use-data";
-import { Phone, Calendar, ChevronDown, Loader2, Users, Search } from "lucide-react";
+import { Phone, Calendar, ChevronDown, Loader2, Users, Search, Download } from "lucide-react";
 import { useState } from "react";
+import { exportLeadsToCSV } from "@/lib/export";
+import { toast } from "sonner";
 
 const statusOptions = ["new", "waiting_agent", "contacted", "converted"] as const;
 const statusLabels: Record<string, string> = {
-  new: "New",
-  waiting_agent: "Waiting",
-  contacted: "Contacted",
-  converted: "Converted",
+  new: "New", waiting_agent: "Waiting", contacted: "Contacted", converted: "Converted",
 };
 const statusClasses: Record<string, string> = {
-  new: "badge-new",
-  waiting_agent: "badge-waiting",
-  contacted: "badge-contacted",
-  converted: "badge-converted",
+  new: "badge-new", waiting_agent: "badge-waiting", contacted: "badge-contacted", converted: "badge-converted",
 };
 
 const LeadsPage = () => {
@@ -25,21 +21,22 @@ const LeadsPage = () => {
 
   const filtered = leads.filter((lead) => {
     const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      (lead.customer_name || "").toLowerCase().includes(q) ||
-      lead.phone_number.toLowerCase().includes(q);
-    const matchesStatus =
-      filterStatus === "all" || lead.status === filterStatus;
+    const matchesSearch = !q || (lead.customer_name || "").toLowerCase().includes(q) || lead.phone_number.toLowerCase().includes(q);
+    const matchesStatus = filterStatus === "all" || lead.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  const handleExport = () => {
+    if (filtered.length === 0) { toast.error("No leads to export"); return; }
+    exportLeadsToCSV(filtered);
+    toast.success(`Exported ${filtered.length} leads to CSV`);
+  };
 
   return (
     <DashboardLayout title="Leads">
       <div className="p-5 space-y-4 max-w-5xl">
-        {/* Controls bar */}
+        {/* Controls */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Search */}
           <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2 flex-1 min-w-[160px] max-w-xs">
             <Search className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
             <input
@@ -51,16 +48,13 @@ const LeadsPage = () => {
             />
           </div>
 
-          {/* Status filter */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {["all", ...statusOptions].map((s) => (
               <button
                 key={s}
                 onClick={() => setFilterStatus(s)}
                 className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
-                  filterStatus === s
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                  filterStatus === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {s === "all" ? "All" : statusLabels[s]}
@@ -68,9 +62,17 @@ const LeadsPage = () => {
             ))}
           </div>
 
-          <span className="ml-auto text-[12px] text-muted-foreground">
-            {filtered.length} of {leads.length}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-[12px] text-muted-foreground">{filtered.length} of {leads.length}</span>
+            <button
+              onClick={handleExport}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground hover:text-foreground text-[12px] font-medium transition-colors disabled:opacity-40"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </button>
+          </div>
         </div>
 
         {/* Table */}
@@ -97,26 +99,14 @@ const LeadsPage = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Phone
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="text-left px-5 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Created
-                    </th>
+                    {["Customer", "Phone", "Status", "Created"].map((h) => (
+                      <th key={h} className="text-left px-5 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((lead) => (
-                    <tr
-                      key={lead.id}
-                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                    >
+                    <tr key={lead.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center flex-shrink-0">
@@ -137,18 +127,11 @@ const LeadsPage = () => {
                         <div className="relative inline-flex items-center">
                           <select
                             value={lead.status}
-                            onChange={(e) =>
-                              updateStatus.mutate({
-                                id: lead.id,
-                                status: e.target.value,
-                              })
-                            }
+                            onChange={(e) => updateStatus.mutate({ id: lead.id, status: e.target.value })}
                             className={`${statusClasses[lead.status]} appearance-none cursor-pointer pr-5 border-0 outline-none font-medium`}
                           >
                             {statusOptions.map((s) => (
-                              <option key={s} value={s}>
-                                {statusLabels[s]}
-                              </option>
+                              <option key={s} value={s}>{statusLabels[s]}</option>
                             ))}
                           </select>
                           <ChevronDown className="absolute right-0.5 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60" />
@@ -157,11 +140,7 @@ const LeadsPage = () => {
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground tabular">
                           <Calendar className="w-3 h-3" />
-                          {new Date(lead.created_at).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                          {new Date(lead.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                         </div>
                       </td>
                     </tr>
