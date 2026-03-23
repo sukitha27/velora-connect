@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, MessageSquare, Eye, EyeOff } from "lucide-react";
+import { Loader2, MessageSquare, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,7 +17,10 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
         if (error) throw error;
         toast.success("Welcome back!");
       } else {
@@ -39,87 +42,131 @@ const AuthPage = () => {
     }
   };
 
+  const inputClass =
+    "w-full bg-muted rounded-xl px-4 py-3 text-[14px] outline-none transition-all duration-150 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/25 focus:bg-card";
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <MessageSquare className="w-7 h-7 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">Velora AI</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {isLogin ? "Sign in to manage conversations" : "Create your agent account"}
-          </p>
-        </div>
+      {/* Subtle background pattern */}
+      <div
+        className="fixed inset-0 pointer-events-none opacity-[0.015]"
+        style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, hsl(161 75% 38%) 1px, transparent 0)`,
+          backgroundSize: "32px 32px",
+        }}
+      />
 
-        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 space-y-4">
-          {!isLogin && (
+      <div className="w-full max-w-[380px] relative">
+        {/* Card glow */}
+        <div
+          className="absolute inset-0 rounded-2xl blur-2xl opacity-20 pointer-events-none"
+          style={{ background: "hsl(161 75% 38% / 0.3)", transform: "scale(0.95) translateY(8px)" }}
+        />
+
+        <div className="relative bg-card border border-border rounded-2xl p-8 shadow-elevated">
+          {/* Logo */}
+          <div className="flex flex-col items-center mb-8">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 shadow-md"
+              style={{ background: "hsl(161 75% 38%)" }}
+            >
+              <MessageSquare className="text-white" style={{ width: 22, height: 22 }} />
+            </div>
+            <h1 className="text-[22px] font-bold text-foreground tracking-tight">Velora AI</h1>
+            <p className="text-[13px] text-muted-foreground mt-1">
+              {isLogin ? "Sign in to your dashboard" : "Create your agent account"}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {!isLogin && (
+              <div>
+                <label className="block text-[12px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your name"
+                  className={inputClass}
+                />
+              </div>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Display Name</label>
+              <label className="block text-[12px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+                Email
+              </label>
               <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your name"
-                className="w-full bg-muted rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="agent@company.com"
+                className={inputClass}
               />
             </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="agent@company.com"
-              className="w-full bg-muted rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-            />
-          </div>
+            <div>
+              <label className="block text-[12px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wide">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                  className={`${inputClass} pr-11`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff style={{ width: 16, height: 16 }} />
+                  ) : (
+                    <Eye style={{ width: 16, height: 16 }} />
+                  )}
+                </button>
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                minLength={6}
-                className="w-full bg-muted rounded-xl px-4 py-3 pr-11 text-sm outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
-              />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-[14px] text-white transition-all duration-150 hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+              style={{ background: "hsl(161 75% 38%)" }}
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  {isLogin ? "Sign In" : "Create Account"}
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-5 pt-5 border-t border-border text-center">
+            <p className="text-[13px] text-muted-foreground">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setIsLogin(!isLogin)}
+                className="font-semibold transition-colors hover:opacity-80"
+                style={{ color: "hsl(161 75% 38%)" }}
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {isLogin ? "Sign Up" : "Sign In"}
               </button>
-            </div>
+            </p>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {isLogin ? "Sign In" : "Create Account"}
-          </button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary font-medium hover:underline"
-            >
-              {isLogin ? "Sign Up" : "Sign In"}
-            </button>
-          </p>
-        </form>
+        </div>
       </div>
     </div>
   );
