@@ -175,7 +175,7 @@ export function ChatView({ conversation, messages }: Props) {
           </div>
 
           <div className={`mt-2 text-[11px] px-2.5 py-1 rounded-lg flex items-center gap-1.5 ${
-            isBotMode ? "bg-primary/8 text-primary" : "bg-muted text-muted-foreground"
+            isBotMode ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
           }`}>
             {isBotMode
               ? <><Bot className="w-3 h-3" /> AI Bot Mode — auto-replies enabled</>
